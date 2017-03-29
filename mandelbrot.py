@@ -8,6 +8,7 @@ Created on Tue Mar 28 00:12:00 2017
 from timeit import default_timer as timer
 from matplotlib.pylab import imshow, jet, show, ion
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 
 plt.rcParams["figure.figsize"] = (10,10)
@@ -40,8 +41,7 @@ setRgb(106, 52, 3);
 l_rgbs = len(rgbs)
 
 @jit
-def mandel(x, y, max_iters):
-    factor = 1
+def mandel(x, y, max_iters,f):
     """
     Given the real and imaginary parts of a complex number,
     determine if it is a candidate for membership in the Mandelbrot
@@ -53,12 +53,11 @@ def mandel(x, y, max_iters):
     for i in range(max_iters):
         z = z*z + c
         if (z.real*z.real + z.imag*z.imag) >= 4:
-            return 256 - (i % (256/factor) * factor)
-
+            return 256 - (i % (256/f) * f)
     return 0
 
 @jit
-def create_fractal(min_x, max_x, min_y, max_y, image, iters):
+def create_fractal(min_x, max_x, min_y, max_y, image, iters,f):
     height = image.shape[0]
     width = image.shape[1]
 
@@ -68,7 +67,7 @@ def create_fractal(min_x, max_x, min_y, max_y, image, iters):
         real = min_x + x * pixel_size_x
         for y in range(height):
             imag = min_y + y * pixel_size_y
-            color = mandel(real, imag, iters)
+            color = mandel(real, imag, iters,f)
             image[y, x] = color
 
     return image
@@ -76,9 +75,10 @@ def create_fractal(min_x, max_x, min_y, max_y, image, iters):
 width = 1000
 height = 1000
 iterat = 255*8
-#x1,x2,y1,y2 = (-0.10309486080000001, -0.10309375488000001, 0.9479814164479998, 0.947982522368)
-#x1,x2,y1,y2 = (-2.0, 1.0, -1.0, 1.0)
-x1,x2,y1,y2 = (-0.10309429899264001, -0.10309429014528002, 0.947982190592, 0.9479821994393599)
+#x1,x2,y1,y2 = (-0.10309486080000001, -0.10309375488000001, 0.9479814164479998, 0.947982522368) wave of hand
+#x1,x2,y1,y2 = (-2.0, 2.0, -2.0, 2.0) Whole mandelbrot
+#x1,x2,y1,y2 = (-0.10309429899264001, -0.10309429014528002, 0.947982190592, 0.9479821994393599) another mandelbrot
+#x1,x2,y1,y2 = (-1.420689408000051, -1.4198364160000487, 0.0023086079999994663, 0.003161599999999487) cross
 def zoom(z_x1,z_x2,z_y1,z_y2):
     l_x = x2 - x1
     o_x = x1
@@ -96,17 +96,12 @@ def set_zoom_out(mag):
     x1,x2,y1,y2 = zoom_out(mag)
     print((x1,x2,y1,y2))
     
-def show_picture():
+def show_picture(f = 1):
     image = np.zeros((height, width), dtype=np.uint8)
     s = timer()
-    create_fractal(x1,x2,y1,y2, image, iterat)
+    create_fractal(x1,x2,y1,y2, image, iterat,f)
     e = timer()
     print(e - s)
     imshow(image)
-    ion()
     show()
     return image
-
-for i in range(2):
-    show_picture()
-    set_zoom_out(1.5)
